@@ -146,7 +146,19 @@ class ScannerActivity : AppCompatActivity() {
         }
 
         binding.btnGallery.setOnClickListener {
-            galleryPicker.launch("image/*")
+            // ဖုန်းဗားရှင်းအလိုက် ဘယ် permission တောင်းရမလဲ ဆုံးဖြတ်မယ်
+            val permissionToRequest = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                Manifest.permission.READ_MEDIA_IMAGES // Android 13+
+            } else {
+                Manifest.permission.READ_EXTERNAL_STORAGE // Android 12-
+            }
+
+            // Permission ရှိ၊ မရှိ စစ်ဆေးမယ်
+            if (ContextCompat.checkSelfPermission(this, permissionToRequest) == PackageManager.PERMISSION_GRANTED) {
+                galleryPicker.launch("image/*") // ရှိပြီးသားဆိုရင် Gallery ဖွင့်မယ်
+            } else {
+                galleryPermissionLauncher.launch(permissionToRequest) // မရှိရင် တောင်းမယ်
+            }
         }
 
         binding.btnFlash.setOnClickListener {
@@ -173,6 +185,17 @@ class ScannerActivity : AppCompatActivity() {
             else -> {
                 cameraPermission.launch(Manifest.permission.CAMERA)
             }
+        }
+    }
+
+    // Gallery Permission တောင်းရန် Launcher
+    private val galleryPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            galleryPicker.launch("image/*")
+        } else {
+            Toast.makeText(this, "Permission denied to access gallery", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -413,6 +436,11 @@ class ScannerActivity : AppCompatActivity() {
 //    }
 
     private fun showQRCodeOverlay(value: String) {
+
+        // 1. အရင်ဆုံး Camera ကို ရပ်လိုက်မယ်
+        pauseScanning()
+
+        // 2. ပြီးမှ Overlay Layout ကို ပြမယ်
         try {
             // Inflate the overlay layout
             val overlayView = layoutInflater.inflate(
@@ -466,11 +494,29 @@ class ScannerActivity : AppCompatActivity() {
             }
         } catch (e: Exception) {
             e.printStackTrace()
+            resumeScanning() // Error တက်ရင် Camera ပြန်ဖွင့်ပေးရမယ်
             Toast.makeText(
                 this,
                 "Error displaying QR code",
                 Toast.LENGTH_SHORT
             ).show()
+        }
+    }
+
+    private fun pauseScanning() {
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+        val cameraProvider = cameraProviderFuture.get()
+
+        // Camera Hardware ကို လုံးဝ ပိတ်ပစ်မယ် (ဘက်ထရီ သက်သာအောင်)
+        cameraProvider.unbindAll()
+        isCameraActive = false
+        updateCameraButton()
+    }
+
+    private fun resumeScanning() {
+        // User က Overlay ကို ပိတ်လိုက်တဲ့အခါ Camera ပြန်ဖွင့်မယ်
+        if (!isCameraActive) {
+            startCamera()
         }
     }
 
@@ -483,6 +529,9 @@ class ScannerActivity : AppCompatActivity() {
                     try {
                         val rootView = window.decorView.findViewById<android.view.ViewGroup>(android.R.id.content)
                         rootView.removeView(overlayView)
+
+                        // 3. Overlay ပိတ်သွားပြီဆိုတာနဲ့ Camera ကို အလိုအလျောက် ပြန်ဖွင့်မယ်
+                        resumeScanning()
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }

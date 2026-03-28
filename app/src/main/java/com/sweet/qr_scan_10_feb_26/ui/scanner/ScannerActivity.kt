@@ -182,41 +182,47 @@ class ScannerActivity : AppCompatActivity() {
         cameraProviderFuture.addListener({
             val cameraProvider = cameraProviderFuture.get()
 
-            val preview = Preview.Builder()
-                .build()
-                .also {
-                    it.setSurfaceProvider(binding.previewView.surfaceProvider)
-                }
+            val preview = Preview.Builder().build().also {
+                it.setSurfaceProvider(binding.previewView.surfaceProvider)
+            }
 
-            // ImageAnalysis ထဲမှာ ဒီလို ပြင်ရေးပါ
+            // ImageAnalysis ကို Performance အကောင်းဆုံးဖြစ်အောင် ပြင်ဆင်ခြင်း
             imageAnalyzer = ImageAnalysis.Builder()
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST) // နောက်ဆုံး frame ကိုပဲ ယူမယ် (Lag မဖြစ်အောင်)
+                .setTargetResolution(android.util.Size(1280, 720)) // Resolution အသင့်အတင့်ပဲ ထားမယ် (မြန်ဆန်စေရန်)
                 .build()
                 .also { analysis ->
                     analysis.setAnalyzer(cameraExecutor) { imageProxy ->
                         val mediaImage = imageProxy.image
                         if (mediaImage != null) {
-                            // 1. ImageProxy ကို Bitmap ပြောင်းပြီး Rotate လုပ်မယ်
-                            val bitmap = imageProxy.toBitmap()
+                            // ML Kit က mediaImage ကို တိုက်ရိုက်ဖတ်နိုင်ပါတယ် (Bitmap ပြောင်းစရာမလိုပါ)
+                            val image = InputImage.fromMediaImage(
+                                mediaImage,
+                                imageProxy.imageInfo.rotationDegrees
+                            )
 
-                            // 2. ပုံရဲ့ အလယ်ကွက်ကိုပဲ ဖြတ်ယူမယ် (Crop)
-                            val croppedBitmap = cropToFrame(bitmap)
-
-                            val image = InputImage.fromBitmap(croppedBitmap, 0)
                             val scanner = BarcodeScanning.getClient()
-
                             scanner.process(image)
                                 .addOnSuccessListener { barcodes ->
                                     if (barcodes.isNotEmpty()) {
                                         val barcode = barcodes[0]
-                                        runOnUiThread {
-                                            barcode.rawValue?.let { onBarcodeScanned(it, "QR") }
+                                        barcode.rawValue?.let { value ->
+                                            // Scan ဖတ်မိရင် UI Thread ပေါ်မှာ လုပ်ဆောင်မယ်
+                                            runOnUiThread {
+                                                onBarcodeScanned(value, getFormatName(barcode.format))
+                                            }
                                         }
                                     }
                                 }
+                                .addOnFailureListener {
+                                    // Scanning error တက်ရင်လည်း ဘာမှမလုပ်ဘဲ ကျော်သွားမယ်
+                                }
                                 .addOnCompleteListener {
+                                    // အရေးကြီးဆုံးအချက် - ImageProxy ကို အမြဲတမ်း ပြန်ပိတ်ပေးရပါမယ်
                                     imageProxy.close()
                                 }
+                        } else {
+                            imageProxy.close()
                         }
                     }
                 }
@@ -231,41 +237,24 @@ class ScannerActivity : AppCompatActivity() {
                     preview,
                     imageAnalyzer
                 )
-
                 isCameraActive = true
                 updateCameraButton()
             } catch (e: Exception) {
-                Toast.makeText(
-                    this,
-                    "Camera initialization failed",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(this, "Camera initialization failed", Toast.LENGTH_SHORT).show()
             }
-
         }, ContextCompat.getMainExecutor(this))
     }
 
-    private fun cropToFrame(bitmap: Bitmap): Bitmap {
-        val width = bitmap.width
-        val height = bitmap.height
 
-        // အလယ်ကွက် (Square) အတိုင်း ဖြတ်မယ်
-        val size = if (width < height) width * 0.7 else height * 0.7
-        val left = (width - size) / 2
-        val top = (height - size) / 2
-
-        return Bitmap.createBitmap(bitmap, left.toInt(), top.toInt(), size.toInt(), size.toInt())
+    private fun getFormatName(format: Int): String {
+        return when (format) {
+            com.google.mlkit.vision.barcode.common.Barcode.FORMAT_QR_CODE -> "QR Code"
+            com.google.mlkit.vision.barcode.common.Barcode.FORMAT_EAN_13 -> "EAN-13"
+            com.google.mlkit.vision.barcode.common.Barcode.FORMAT_UPC_A -> "UPC-A"
+            com.google.mlkit.vision.barcode.common.Barcode.FORMAT_CODE_128 -> "Code 128"
+            else -> "Barcode"
+        }
     }
-
-    // ImageProxy to Bitmap extension
-    // ပိုမိုကောင်းမွန်သော ImageProxy to Bitmap
-    fun ImageProxy.toBitmap(): Bitmap {
-        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        // CameraX 1.2.0+ မှာ ပါတဲ့ built-in converter ကို သုံးခြင်း (လိုအပ်ရင်)
-        // သို့မဟုတ် တခြား standard converter utility သုံးနိုင်ပါတယ်
-        return bitmap
-    }
-
     private fun onBarcodeScanned(value: String, format: String) {
         val currentTime = System.currentTimeMillis()
 

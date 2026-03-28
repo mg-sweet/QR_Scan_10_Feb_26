@@ -333,16 +333,22 @@ class ScannerActivity : AppCompatActivity() {
     private fun toggleCamera() {
         isCameraActive = !isCameraActive
 
-        // PreviewView ရဲ့ visibility ကို ပြောင်းလဲမယ်
-        val visibility = if (isCameraActive) View.VISIBLE else View.INVISIBLE
-        binding.previewView.visibility = visibility
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+        val cameraProvider = cameraProviderFuture.get()
 
-        // အကယ်၍ XML ထဲမှာ ID ကို scannerOverlay လို့ ပေးထားရင် အောက်က line ကို သုံးပါ
-        // binding.scannerOverlay.visibility = visibility
+        if (isCameraActive) {
+            // Camera ပြန်ဖွင့်မယ်
+            binding.previewView.visibility = View.VISIBLE
+            binding.scannerOverlay.visibility = View.VISIBLE
+            startCamera() // Camera ကို Lifecycle နဲ့ ပြန်ချိတ်မယ်
+        } else {
+            // Camera ကို လုံးဝ ရပ်ပစ်မယ်
+            binding.previewView.visibility = View.INVISIBLE
+            binding.scannerOverlay.visibility = View.INVISIBLE
 
-        // Camera ပိတ်သွားတဲ့အချိန်မှာ Flash လင်းနေရင် ပိတ်ပစ်မယ်
-        if (!isCameraActive && isFlashOn) {
-            toggleFlash()
+            cameraProvider.unbindAll() // ဒါက Hardware ကို လုံးဝ ပိတ်လိုက်တာပါ
+
+            if (isFlashOn) toggleFlash() // Flash လင်းနေရင်လည်း ပိတ်မယ်
         }
 
         updateCameraButton()

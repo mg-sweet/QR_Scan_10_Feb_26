@@ -2,12 +2,13 @@ package com.sweet.qr_scan_10_feb_26.ui.scanner
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.media.MediaPlayer
+import android.graphics.*
+import android.media.AudioManager
+import android.media.ToneGenerator
 import android.net.Uri
-import android.os.Bundle
-import android.os.VibrationEffect
-import android.os.Vibrator
+import android.os.*
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -15,373 +16,187 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
+import androidx.core.view.*
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
-import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import com.sweet.qr_scan_10_feb_26.R
 import com.sweet.qr_scan_10_feb_26.databinding.ActivityScannerBinding
-import com.sweet.qr_scan_10_feb_26.utils.BarcodeAnalyzer
+import com.sweet.qr_scan_10_feb_26.utils.QRCodeGenerator
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Matrix
-import android.graphics.Rect
-import androidx.camera.core.ImageProxy
-import android.media.AudioManager
-import android.media.ToneGenerator
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions
+import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.barcode.common.Barcode
+
 
 class ScannerActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityScannerBinding
     private val viewModel: ScannerViewModel by viewModels()
+
     private lateinit var cameraExecutor: ExecutorService
-    private lateinit var scanResultAdapter: ScanResultAdapter
+    private var cameraProvider: ProcessCameraProvider? = null
+    // ScannerActivity.kt ရဲ့ အပေါ်ပိုင်းမှာ
+    private var camera: androidx.camera.core.Camera? = null
+
+    private lateinit var adapter: ScanResultAdapter
 
     private var folderId: Long = -1
-    private var folderName: String = ""
-    private var camera: Camera? = null
     private var isFlashOn = false
     private var isCameraActive = true
-    private var imageAnalyzer: ImageAnalysis? = null
 
-    private var lastScannedTime: Long = 0
-    private val SCAN_DELAY = 1000L // 1 စက္ကန့် (၁၀၀၀ မီလီစက္ကန့်) ခြားပြီးမှ နောက်တစ်ခါ ဖတ်မယ်
+    private var lastScanTime = 0L
+    private val SCAN_DELAY = 1000L // ၁.၅ စက္ကန့် ခြားမည်
+
+    // ScannerActivity.kt ထဲတွင် ဤသို့ အစားထိုးပါ
+
+    // ScannerActivity.kt ထဲတွင် ဤအတိုင်း အစားထိုးပါ
+
+    private val scanner by lazy {
+        // BarcodeScannerOptions ကို တိုက်ရိုက်ခေါ်သုံးခြင်း
+        val options = BarcodeScannerOptions.Builder()
+            .setBarcodeFormats(
+                Barcode.FORMAT_QR_CODE,
+                Barcode.FORMAT_EAN_13,
+                Barcode.FORMAT_CODE_128
+            )
+            .build()
+        BarcodeScanning.getClient(options)
+    }
 
     private val vibrator by lazy { getSystemService(VIBRATOR_SERVICE) as Vibrator }
 
-    // Gallery picker
-    private val galleryPicker = registerForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
+    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { scanImageFromGallery(it) }
-    }
-
-    // Camera permission
-    private val cameraPermission = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            startCamera()
-        } else {
-            Toast.makeText(
-                this,
-                "Camera permission is required",
-                Toast.LENGTH_LONG
-            ).show()
-            finish()
-        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setupEdgeToEdge()
         binding = ActivityScannerBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        folderId = intent.getLongExtra("FOLDER_ID", -1)
-        folderName = intent.getStringExtra("FOLDER_NAME") ?: "Folder"
+        fun setupEdgeToEdge() {
+            // 1. Layout ကို Notch အောက်အထိ တိုးဝင်ခွင့်ပေးမယ်
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+            window.statusBarColor = Color.TRANSPARENT
 
-        if (folderId == -1L) {
-            Toast.makeText(this, "Invalid folder", Toast.LENGTH_SHORT).show()
-            finish()
-            return
+            // 2. Status Bar ပေါ်က icon များကို အမည်းရောင်ပြောင်းမယ်
+            WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = true
         }
 
-        binding.tvFolderTitle.text = folderName
+// ဤ code အတိုင်း အတိအကျ အစားထိုးပါ
+        ViewCompat.setOnApplyWindowInsetsListener(binding.topBar) { view, insets ->
+            val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
 
+            // view.paddingLeft/Right/Bottom များကို မပျောက်စေဘဲ Status bar အမြင့်ကိုပဲ top padding အဖြစ်ထည့်သည်
+            view.setPadding(
+                view.paddingLeft,
+                statusBarHeight, // အပို 10dp မလိုတော့ပါ၊ wrap_content က အလိုလို ညှိပေးပါလိမ့်မည်
+                view.paddingRight,
+                view.paddingBottom
+            )
+            insets
+        }
+
+        folderId = intent.getLongExtra("FOLDER_ID", -1)
         cameraExecutor = Executors.newSingleThreadExecutor()
 
-        setupRecyclerView()
-        observeScanItems()
-        setupClickListeners()
+        setupRecycler()
+        observeData()
+        setupClicks()
         checkCameraPermission()
     }
 
-    private fun setupRecyclerView() {
-        scanResultAdapter = ScanResultAdapter(
-            onItemClick = { item ->
-                showQRCodeOverlay(item.scanValue)
-            },
-            onPlusClick = { item ->
-                viewModel.incrementQuantity(item.id)
-                vibrateDevice()
-            },
-            onMinusClick = { item ->
-                viewModel.decrementQuantity(item)
-                vibrateDevice()
-            },
-            onDeleteClick = { item ->
-                showDeleteConfirmation(item)
-            }
-        )
-
-        binding.rvScanResults.apply {
-            layoutManager = LinearLayoutManager(this@ScannerActivity)
-            adapter = scanResultAdapter
-        }
-    }
-
-    private fun observeScanItems() {
-        viewModel.getScanItems(folderId).observe(this) { items ->
-            scanResultAdapter.submitList(items)
-
-            val distinctScans = items.size
-            val totalScans = items.sumOf { it.quantity }
-
-            binding.tvScanCount.text = "$distinctScans Distinct  |  $totalScans Total Scans"
-
-            if (items.isEmpty()) {
-                binding.emptyResults.visibility = View.VISIBLE
-            } else {
-                binding.emptyResults.visibility = View.GONE
-            }
-        }
-    }
-
-    private fun setupClickListeners() {
-        binding.btnBack.setOnClickListener {
-            finish()
-        }
-
-        binding.btnGallery.setOnClickListener {
-            // ဖုန်းဗားရှင်းအလိုက် ဘယ် permission တောင်းရမလဲ ဆုံးဖြတ်မယ်
-            val permissionToRequest = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                Manifest.permission.READ_MEDIA_IMAGES // Android 13+
-            } else {
-                Manifest.permission.READ_EXTERNAL_STORAGE // Android 12-
-            }
-
-            // Permission ရှိ၊ မရှိ စစ်ဆေးမယ်
-            if (ContextCompat.checkSelfPermission(this, permissionToRequest) == PackageManager.PERMISSION_GRANTED) {
-                galleryPicker.launch("image/*") // ရှိပြီးသားဆိုရင် Gallery ဖွင့်မယ်
-            } else {
-                galleryPermissionLauncher.launch(permissionToRequest) // မရှိရင် တောင်းမယ်
-            }
-        }
-
-        binding.btnFlash.setOnClickListener {
-            toggleFlash()
-        }
-
-        binding.btnStopCamera.setOnClickListener {
-            toggleCamera()
-        }
-
-        binding.btnManualAdd.setOnClickListener {
-            showManualAddDialog()
-        }
-    }
-
-    private fun checkCameraPermission() {
-        when {
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.CAMERA
-            ) == PackageManager.PERMISSION_GRANTED -> {
-                startCamera()
-            }
-            else -> {
-                cameraPermission.launch(Manifest.permission.CAMERA)
-            }
-        }
-    }
-
-    // Gallery Permission တောင်းရန် Launcher
-    private val galleryPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            galleryPicker.launch("image/*")
-        } else {
-            Toast.makeText(this, "Permission denied to access gallery", Toast.LENGTH_SHORT).show()
-        }
+    private fun setupEdgeToEdge() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = Color.TRANSPARENT
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = true
     }
 
     private fun startCamera() {
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-
-        cameraProviderFuture.addListener({
-            val cameraProvider = cameraProviderFuture.get()
+        val future = ProcessCameraProvider.getInstance(this)
+        future.addListener({
+            cameraProvider = future.get()
 
             val preview = Preview.Builder().build().also {
                 it.setSurfaceProvider(binding.previewView.surfaceProvider)
             }
 
-            // ImageAnalysis ကို Performance အကောင်းဆုံးဖြစ်အောင် ပြင်ဆင်ခြင်း
-            imageAnalyzer = ImageAnalysis.Builder()
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST) // နောက်ဆုံး frame ကိုပဲ ယူမယ် (Lag မဖြစ်အောင်)
-                .setTargetResolution(android.util.Size(1280, 720)) // Resolution အသင့်အတင့်ပဲ ထားမယ် (မြန်ဆန်စေရန်)
+            // ✅ Optimization: Resolution ကို 720p (HD) မှာပဲ ကန့်သတ်မယ်။
+            // 1080p ထက် အများကြီး ပိုမြန်ပြီး Smooth ဖြစ်စေပါတယ်။
+            val analysis = ImageAnalysis.Builder()
+                .setTargetResolution(android.util.Size(1280, 720))
+                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build()
-                .also { analysis ->
-                    analysis.setAnalyzer(cameraExecutor) { imageProxy ->
-                        val mediaImage = imageProxy.image
-                        if (mediaImage != null) {
-                            // ML Kit က mediaImage ကို တိုက်ရိုက်ဖတ်နိုင်ပါတယ် (Bitmap ပြောင်းစရာမလိုပါ)
-                            val image = InputImage.fromMediaImage(
-                                mediaImage,
-                                imageProxy.imageInfo.rotationDegrees
-                            )
 
-                            val scanner = BarcodeScanning.getClient()
-                            scanner.process(image)
-                                .addOnSuccessListener { barcodes ->
-                                    if (barcodes.isNotEmpty()) {
-                                        val barcode = barcodes[0]
-                                        barcode.rawValue?.let { value ->
-                                            // Scan ဖတ်မိရင် UI Thread ပေါ်မှာ လုပ်ဆောင်မယ်
-                                            runOnUiThread {
-                                                onBarcodeScanned(value, getFormatName(barcode.format))
-                                            }
-                                        }
-                                    }
-                                }
-                                .addOnFailureListener {
-                                    // Scanning error တက်ရင်လည်း ဘာမှမလုပ်ဘဲ ကျော်သွားမယ်
-                                }
-                                .addOnCompleteListener {
-                                    // အရေးကြီးဆုံးအချက် - ImageProxy ကို အမြဲတမ်း ပြန်ပိတ်ပေးရပါမယ်
-                                    imageProxy.close()
-                                }
-                        } else {
-                            imageProxy.close()
-                        }
-                    }
-                }
-
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+            analysis.setAnalyzer(cameraExecutor) { proxy ->
+                processImage(proxy)
+            }
 
             try {
-                cameraProvider.unbindAll()
-                camera = cameraProvider.bindToLifecycle(
+                cameraProvider?.unbindAll()
+                camera = cameraProvider?.bindToLifecycle(
                     this,
-                    cameraSelector,
+                    CameraSelector.DEFAULT_BACK_CAMERA,
                     preview,
-                    imageAnalyzer
+                    analysis
                 )
-                isCameraActive = true
-                updateCameraButton()
-            } catch (e: Exception) {
-                Toast.makeText(this, "Camera initialization failed", Toast.LENGTH_SHORT).show()
-            }
+            } catch (e: Exception) { e.printStackTrace() }
+
         }, ContextCompat.getMainExecutor(this))
     }
 
-
-    private fun getFormatName(format: Int): String {
-        return when (format) {
-            com.google.mlkit.vision.barcode.common.Barcode.FORMAT_QR_CODE -> "QR Code"
-            com.google.mlkit.vision.barcode.common.Barcode.FORMAT_EAN_13 -> "EAN-13"
-            com.google.mlkit.vision.barcode.common.Barcode.FORMAT_UPC_A -> "UPC-A"
-            com.google.mlkit.vision.barcode.common.Barcode.FORMAT_CODE_128 -> "Code 128"
-            else -> "Barcode"
+    private fun processImage(proxy: ImageProxy) {
+        val mediaImage = proxy.image ?: run {
+            proxy.close()
+            return
         }
-    }
-    private fun onBarcodeScanned(value: String, format: String) {
-        val currentTime = System.currentTimeMillis()
 
-        // နောက်ဆုံးဖတ်ခဲ့တဲ့အချိန်နဲ့ အခုအချိန်ဟာ ၂ စက္ကန့် (SCAN_DELAY) ကျော်မှ အလုပ်လုပ်မယ်
-        if (currentTime - lastScannedTime > SCAN_DELAY) {
-            lastScannedTime = currentTime // လက်ရှိအချိန်ကို မှတ်ထားမယ်
+        val image = InputImage.fromMediaImage(
+            mediaImage,
+            proxy.imageInfo.rotationDegrees
+        )
 
-            if (isCameraActive) {
-                viewModel.addScanItem(folderId, value, format)
-                vibrateDevice()
-                playBeep()
+        scanner.process(image)
+            .addOnSuccessListener { barcodes ->
+                if (barcodes.isEmpty() || !isCameraActive) return@addOnSuccessListener
 
-                // Scan ဖတ်မိသွားကြောင်း သိသာအောင် ခဏလေး Toast ပြပေးလို့ရပါတယ် (Optional)
-                // Toast.makeText(this, "Scanned: $value", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
+                val centerX = image.width / 2f
+                val centerY = image.height / 2f
 
-    private fun scanImageFromGallery(uri: Uri) {
-        try {
-            val image = InputImage.fromFilePath(this, uri)
-            val scanner = BarcodeScanning.getClient()
+                // ✅ Optimization: sqrt() အစား Squared Distance ကို သုံးမယ်။
+                // sqrt က CPU အရမ်းစားလို့ Point Scan အတွက် ဒါက ပိုမြန်ပါတယ်။
+                val thresholdSquared = 80f * 80f
+                var bestCandidate: String? = null
+                var minDistanceSq = Float.MAX_VALUE
 
-            scanner.process(image)
-                .addOnSuccessListener { barcodes ->
-                    if (barcodes.isNotEmpty()) {
-                        val barcode = barcodes[0]
-                        barcode.rawValue?.let { value ->
-                            val format = when (barcode.format) {
-                                com.google.mlkit.vision.barcode.common.Barcode.FORMAT_QR_CODE -> "QR Code"
-                                else -> "Barcode"
-                            }
-                            viewModel.addScanItem(folderId, value, format)
-                            Toast.makeText(
-                                this,
-                                "Scanned from image",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    } else {
-                        Toast.makeText(
-                            this,
-                            "No barcode found in image",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                for (barcode in barcodes) {
+                    val box = barcode.boundingBox ?: continue
+                    val bx = box.centerX().toFloat()
+                    val by = box.centerY().toFloat()
+
+                    // Squared Distance (dx^2 + dy^2)
+                    val dx = bx - centerX
+                    val dy = by - centerY
+                    val distSq = dx * dx + dy * dy
+
+                    if (distSq < thresholdSquared && distSq < minDistanceSq) {
+                        minDistanceSq = distSq
+                        bestCandidate = barcode.rawValue
                     }
                 }
-                .addOnFailureListener {
-                    Toast.makeText(
-                        this,
-                        "Failed to scan image",
-                        Toast.LENGTH_SHORT
-                    ).show()
+
+                bestCandidate?.let {
+                    runOnUiThread { onScanned(it) }
                 }
-        } catch (e: Exception) {
-            Toast.makeText(
-                this,
-                "Error loading image",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-    }
-
-    private fun toggleFlash() {
-        camera?.let {
-            isFlashOn = !isFlashOn
-            it.cameraControl.enableTorch(isFlashOn)
-
-            binding.btnFlash.setImageResource(
-                if (isFlashOn) R.drawable.ic_flash_off
-                else R.drawable.ic_flash_on
-            )
-        }
-    }
-
-    private fun toggleCamera() {
-        isCameraActive = !isCameraActive
-
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-        val cameraProvider = cameraProviderFuture.get()
-
-        if (isCameraActive) {
-            // Camera ပြန်ဖွင့်မယ်
-            binding.previewView.visibility = View.VISIBLE
-            binding.scannerOverlay.visibility = View.VISIBLE
-            startCamera() // Camera ကို Lifecycle နဲ့ ပြန်ချိတ်မယ်
-        } else {
-            // Camera ကို လုံးဝ ရပ်ပစ်မယ်
-            binding.previewView.visibility = View.INVISIBLE
-            binding.scannerOverlay.visibility = View.INVISIBLE
-
-            cameraProvider.unbindAll() // ဒါက Hardware ကို လုံးဝ ပိတ်လိုက်တာပါ
-
-            if (isFlashOn) toggleFlash() // Flash လင်းနေရင်လည်း ပိတ်မယ်
-        }
-
-        updateCameraButton()
-    }
-
-    private fun updateCameraButton() {
-        binding.btnStopCamera.setImageResource(
-            if (isCameraActive) R.drawable.ic_camera_off
-            else R.drawable.ic_qr_scan // Use as camera on icon
-        )
+            }
+            .addOnCompleteListener {
+                // အရေးကြီးသည်: Frame တစ်ခုချင်းစီကို အမြန်ဆုံး ပိတ်ပေးရပါမယ်။
+                proxy.close()
+            }
     }
 
     private fun showManualAddDialog() {
@@ -406,6 +221,59 @@ class ScannerActivity : AppCompatActivity() {
             .show()
     }
 
+    private fun onScanned(value: String) {
+        val now = System.currentTimeMillis()
+        if (now - lastScanTime < SCAN_DELAY || !isCameraActive) return
+        lastScanTime = now
+
+        viewModel.addScanItem(folderId, value, "QR/Barcode")
+        vibrate(); beep()
+    }
+
+    private fun scanImageFromGallery(uri: Uri) {
+        try {
+            val image = InputImage.fromFilePath(this, uri)
+            scanner.process(image).addOnSuccessListener { barcodes ->
+                if (barcodes.isNotEmpty()) {
+                    barcodes.first().rawValue?.let { onScanned(it) }
+                } else {
+                    Toast.makeText(this, "No QR/Barcode found", Toast.LENGTH_SHORT).show()
+                }
+            }
+        } catch (e: Exception) { e.printStackTrace() }
+    }
+
+    private fun showQrOverlay(value: String) {
+        toggleCamera()
+        val view = layoutInflater.inflate(R.layout.dialog_qr_overlay, null)
+        val iv = view.findViewById<android.widget.ImageView>(R.id.ivQrCode)
+        val tv = view.findViewById<android.widget.TextView>(R.id.tvQrValue)
+
+        iv.setImageBitmap(QRCodeGenerator.generateQRCode(value, 800, 800))
+        tv.text = value
+
+        val rootView = window.decorView.findViewById<ViewGroup>(android.R.id.content)
+        rootView.addView(view)
+
+        view.setOnClickListener {
+            rootView.removeView(view)
+            toggleCamera()
+        }
+    }
+
+    private fun setupClicks() {
+        binding.btnBack.setOnClickListener { finish() }
+        binding.btnFlash.setOnClickListener { toggleFlash() }
+        binding.btnStopCamera.setOnClickListener { toggleCamera() }
+        binding.btnGallery.setOnClickListener { pickImageLauncher.launch("image/*") }
+
+        // ✅ Manual Add Listener ထည့်သွင်းခြင်း
+        binding.btnManualAdd.setOnClickListener {
+            // သင်၏ Manual Dialog logic ကို ဤနေရာတွင် ထည့်ပါ
+            showManualAddDialog()
+        }
+    }
+
     private fun showDeleteConfirmation(item: com.sweet.qr_scan_10_feb_26.data.entity.ScanItem) {
         MaterialAlertDialogBuilder(this)
             .setTitle("Delete Scan?")
@@ -417,139 +285,129 @@ class ScannerActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun vibrateDevice() {
-        if (vibrator.hasVibrator()) {
-            vibrator.vibrate(
-                VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE)
-            )
-        }
-    }
-
-//    private fun playBeep() {
-//        try {
-//            val mediaPlayer = MediaPlayer.create(this, R.raw.beep)
-//            mediaPlayer?.start()
-//            mediaPlayer?.setOnCompletionListener { it.release() }
-//        } catch (e: Exception) {
-//            // Beep sound not available
-//        }
-//    }
-
-    private fun showQRCodeOverlay(value: String) {
-
-        // 1. အရင်ဆုံး Camera ကို ရပ်လိုက်မယ်
-        pauseScanning()
-
-        // 2. ပြီးမှ Overlay Layout ကို ပြမယ်
-        try {
-            // Inflate the overlay layout
-            val overlayView = layoutInflater.inflate(
-                com.sweet.qr_scan_10_feb_26.R.layout.dialog_qr_overlay,
-                null
-            )
-
-            val qrCard = overlayView.findViewById<com.google.android.material.card.MaterialCardView>(
-                com.sweet.qr_scan_10_feb_26.R.id.qrCard
-            )
-            val ivQrCode = overlayView.findViewById<android.widget.ImageView>(
-                com.sweet.qr_scan_10_feb_26.R.id.ivQrCode
-            )
-            val tvQrValue = overlayView.findViewById<android.widget.TextView>(
-                com.sweet.qr_scan_10_feb_26.R.id.tvQrValue
-            )
-
-            // Generate QR code
-            val qrBitmap = com.sweet.qr_scan_10_feb_26.utils.QRCodeGenerator.generateQRCode(value, 800, 800)
-
-            if (qrBitmap != null) {
-                ivQrCode.setImageBitmap(qrBitmap)
-                tvQrValue.text = value
-
-                // Add overlay to root layout
-                val rootView = window.decorView.findViewById<android.view.ViewGroup>(android.R.id.content)
-                rootView.addView(overlayView)
-
-                // Animate in
-                overlayView.alpha = 0f
-                overlayView.animate()
-                    .alpha(1f)
-                    .setDuration(200)
-                    .start()
-
-                // Click outside to dismiss
-                overlayView.setOnClickListener {
-                    dismissQROverlay(overlayView)
-                }
-
-                // Prevent click on card from dismissing
-                qrCard.setOnClickListener {
-                    // Do nothing - prevent propagation
-                }
-            } else {
-                Toast.makeText(
-                    this,
-                    "Failed to generate QR code",
-                    Toast.LENGTH_SHORT
-                ).show()
+    private fun setupRecycler() {
+        adapter = ScanResultAdapter(
+            onItemClick = { showQrOverlay(it.scanValue) },
+            onPlusClick = { viewModel.incrementQuantity(it.id); vibrate() },
+            onMinusClick = { viewModel.decrementQuantity(it); vibrate() },
+            onDeleteClick = { item ->
+                // ✅ Delete Logic ထည့်သွင်းခြင်း
+                showDeleteConfirmation(item)
+                vibrate()
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            resumeScanning() // Error တက်ရင် Camera ပြန်ဖွင့်ပေးရမယ်
-            Toast.makeText(
-                this,
-                "Error displaying QR code",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
+        )
+        binding.rvScanResults.layoutManager = LinearLayoutManager(this)
+        binding.rvScanResults.adapter = adapter
     }
 
-    private fun pauseScanning() {
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-        val cameraProvider = cameraProviderFuture.get()
-
-        // Camera Hardware ကို လုံးဝ ပိတ်ပစ်မယ် (ဘက်ထရီ သက်သာအောင်)
-        cameraProvider.unbindAll()
-        isCameraActive = false
-        updateCameraButton()
-    }
-
-    private fun resumeScanning() {
-        // User က Overlay ကို ပိတ်လိုက်တဲ့အခါ Camera ပြန်ဖွင့်မယ်
-        if (!isCameraActive) {
-            startCamera()
-        }
-    }
-
-    private fun dismissQROverlay(overlayView: android.view.View) {
-        try {
-            overlayView.animate()
-                .alpha(0f)
-                .setDuration(200)
-                .withEndAction {
-                    try {
-                        val rootView = window.decorView.findViewById<android.view.ViewGroup>(android.R.id.content)
-                        rootView.removeView(overlayView)
-
-                        // 3. Overlay ပိတ်သွားပြီဆိုတာနဲ့ Camera ကို အလိုအလျောက် ပြန်ဖွင့်မယ်
-                        resumeScanning()
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
+    private fun observeData() {
+        viewModel.getScanItems(folderId).observe(this) { list ->
+            // submitList ရဲ့ ဒုတိယ parameter မှာ callback ထည့်မယ်
+            adapter.submitList(list) {
+                // ✅ List Update ဖြစ်ပြီးတာနဲ့ အပေါ်ဆုံး (Position 0) ကို အလိုအလျောက် ဆွဲတင်မယ်
+                if (list.isNotEmpty()) {
+                    // scrollToPosition(0) က ချက်ချင်း ရောက်သွားစေပြီး
+                    // smoothScrollToPosition(0) ကတော့ လျှောခနဲ တက်သွားစေပါတယ်
+                    binding.rvScanResults.scrollToPosition(0)
                 }
-                .start()
-        } catch (e: Exception) {
-            e.printStackTrace()
+            }
+
+            binding.tvScanCount.text = "${list.size} Items • ${list.sumOf { it.quantity }} Scans"
+            binding.emptyResults.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
         }
     }
 
-    private fun playBeep() {
+    private fun toggleCamera() {
+        isCameraActive = !isCameraActive
+        val cameraProvider = ProcessCameraProvider.getInstance(this).get()
+        if (isCameraActive) {
+            // --- Camera ဖွင့်ချိန် ---
+            binding.previewView.visibility = View.VISIBLE
+            binding.scannerOverlay.visibility = View.VISIBLE
+
+            // Placeholder ကို Fade out လုပ်ပြီး ဖျောက်မည်
+            binding.cameraPlaceholder.animate().alpha(0f).setDuration(200).withEndAction {
+                binding.cameraPlaceholder.visibility = View.GONE
+            }.start()
+            startCamera()
+        } else {
+            // --- Camera ပိတ်ချိန် ---
+            // Placeholder ကို အရင်ပြမည်
+            binding.cameraPlaceholder.alpha = 0f
+            binding.cameraPlaceholder.visibility = View.VISIBLE
+            binding.cameraPlaceholder.animate().alpha(1f).setDuration(300).start()
+
+            // PreviewView နှင့် Overlay ကို ဖျောက်မည်
+            binding.previewView.visibility = View.INVISIBLE
+            binding.scannerOverlay.visibility = View.INVISIBLE
+
+            cameraProvider.unbindAll() // Hardware ကို လုံးဝ ပိတ်လိုက်ခြင်း
+            if (isFlashOn) toggleFlash()
+        }
+        updateCameraButton()
+
+    }
+
+    private fun toggleFlash() {
+        // အပေါ်မှာ type အတိအကျ ကြေညာထားရင် ဒီတိုင်း ရေးလို့ရပါပြီ
+        camera?.let {
+            isFlashOn = !isFlashOn
+            it.cameraControl.enableTorch(isFlashOn)
+
+            binding.btnFlash.setImageResource(
+                if (isFlashOn) R.drawable.ic_flash_off
+                else R.drawable.ic_flash_on
+            )
+        }
+    }
+
+    private fun updateCameraButton() {
+        // 1. ခလုတ်၏ ပုံရိပ် (Icon) ကို ပြောင်းလဲခြင်း
+        binding.btnStopCamera.setImageResource(
+            if (isCameraActive) R.drawable.ic_camera_off // Camera ဖွင့်ထားရင် "Stop" ပုံစံပြမည်
+            else R.drawable.ic_qr_scan // Camera ပိတ်ထားရင် "Start/Scan" ပုံစံပြမည်
+        )
+
+        // 2. ✅ UX Pro Tip: ခလုတ်၏ အရောင် (Tint) ကိုပါ ပြောင်းလဲပေးခြင်း
+        // Camera ဖွင့်ထားချိန်မှာ "အနီရောင်" (Stop) ပြပြီး၊ ပိတ်ထားချိန်မှာ "အစိမ်းရောင်" (Start) ပြပါမယ်
+        val tintColor = if (isCameraActive) {
+            android.graphics.Color.parseColor("#EF4444") // Red (Danger/Stop)
+        } else {
+            android.graphics.Color.parseColor("#10B981") // Green (Success/Start)
+        }
+
+        binding.btnStopCamera.imageTintList = android.content.res.ColorStateList.valueOf(tintColor)
+
+        // 3. Option: ခလုတ်ကို နှိပ်လိုက်တဲ့အခါ ခံစားချက်ပိုကောင်းအောင် Animation အနည်းငယ် ထည့်နိုင်ပါတယ်
+        binding.btnStopCamera.animate()
+            .scaleX(1.1f)
+            .scaleY(1.1f)
+            .setDuration(100)
+            .withEndAction {
+                binding.btnStopCamera.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).start()
+            }
+            .start()
+    }
+
+    private fun checkCameraPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            startCamera()
+        } else {
+            registerForActivityResult(ActivityResultContracts.RequestPermission()) { if (it) startCamera() }.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    private fun beep() {
         try {
-            // TONE_PROP_BEEP ဆိုတာ Standard Scan ဖတ်တဲ့ အသံမျိုးပါ
-            // 100 ဆိုတာ အသံအတိုးအကျယ် (Volume) ပါ
-            val toneG = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 100)
-            toneG.startTone(ToneGenerator.TONE_PROP_BEEP, 150) // 150 က အသံကြာချိန် (ms)
-        } catch (e: Exception) {
-            e.printStackTrace()
+            ToneGenerator(AudioManager.STREAM_NOTIFICATION, 100).startTone(ToneGenerator.TONE_PROP_BEEP, 150)
+        } catch (e: Exception) {}
+    }
+
+    private fun vibrate() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
+        } else {
+            vibrator.vibrate(50)
         }
     }
 

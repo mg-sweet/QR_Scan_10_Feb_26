@@ -57,7 +57,7 @@ dependencies {
     implementation("androidx.camera:camera-view:1.3.1")
 
     // ML Kit Barcode Scanning
-    implementation("com.google.mlkit:barcode-scanning:17.2.0")
+    implementation("com.google.mlkit:barcode-scanning:17.3.0")
 
     // Room Database
     implementation("androidx.room:room-runtime:2.6.1")

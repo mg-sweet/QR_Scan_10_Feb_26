@@ -1,23 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:fitsSystemWindows="true">
 
-    <!-- 1. Top Bar (အပေါ်ဆုံးမှာ အသေထားပါမယ်) -->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+
+    xmlns:tools="http://schemas.android.com/tools"
+
+    android:layout_width="match_parent"
+
+    android:layout_height="match_parent"
+
+    android:background="#FFFFF1">
+
+
+
+    <!-- activity_scanner.xml ထဲက topBar အပိုင်း -->
+
     <LinearLayout
         android:id="@+id/topBar"
         android:layout_width="match_parent"
-        android:layout_height="64dp"
+        android:layout_height="wrap_content"
+        android:minHeight="64dp"
         android:background="#FFFFFF"
         android:elevation="4dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingHorizontal="12dp"
-        android:clickable="true"
-        android:focusable="true"
         app:layout_constraintTop_toTopOf="parent">
 
         <ImageButton
@@ -35,19 +43,21 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
             android:textColor="@android:color/black"
             android:textSize="18sp"
             android:textStyle="bold"
             tools:text="Folder Name" />
 
+        <!-- Image Scan စာသားလေး ထည့်သွင်းခြင်း -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="4dp"
+            android:text="Image Scan"
             android:textColor="#6B7280"
-            android:textSize="14sp"
-            android:textStyle="normal"
-            android:text="Image Scan" />
+            android:textSize="13sp"
+            android:layout_marginEnd="4dp" />
 
         <ImageButton
             android:id="@+id/btnGallery"
@@ -59,134 +69,266 @@
             app:tint="@android:color/black" />
     </LinearLayout>
 
-    <!-- 2. Camera Preview Area (Top Bar ရဲ့ အောက်ကနေပဲ စပါမယ်) -->
-    <FrameLayout
+
+
+    <!-- Camera View (220dp Fixed) -->
+
+    <com.google.android.material.card.MaterialCardView
+
         android:id="@+id/cameraContainer"
-        android:layout_width="0dp"
-        android:layout_height="200dp"
-        android:background="@android:color/black"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+
+        android:layout_width="match_parent"
+
+        android:layout_height="220dp"
+
+        app:cardCornerRadius="0dp"
+
+        app:cardElevation="0dp"
+
+        app:cardPreventCornerOverlap="true"
+
         app:layout_constraintTop_toBottomOf="@+id/topBar">
 
+
+
         <androidx.camera.view.PreviewView
+
             android:id="@+id/previewView"
+
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+
+            android:layout_height="match_parent"
+
+            app:scaleType="fillCenter" />
+
+
+        <!-- ✅ Professional Camera Off Placeholder (အသစ်ထည့်ရန်) -->
+        <LinearLayout
+            android:id="@+id/cameraPlaceholder"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#1E293B"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:visibility="gone"> <!-- ပုံမှန်ဆိုရင် ဖျောက်ထားမည် -->
+
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:alpha="0.4"
+                android:src="@drawable/ic_camera_off"
+                app:tint="@android:color/white" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:alpha="0.5"
+                android:text="Scanner Paused"
+                android:textColor="@android:color/white"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
 
         <com.sweet.qr_scan_10_feb_26.utils.ScannerOverlayView
-            android:id="@+id/scannerOverlay"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-    </FrameLayout>
 
-    <!-- 3. Controls Card -->
+            android:id="@+id/scannerOverlay"
+
+            android:layout_width="match_parent"
+
+            android:layout_height="match_parent" />
+
+    </com.google.android.material.card.MaterialCardView>
+
+
+
+    <!-- Controls -->
+
     <com.google.android.material.card.MaterialCardView
+
         android:id="@+id/controlsCard"
-        android:layout_width="0dp"
+
+        android:layout_width="match_parent"
+
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="-10dp"
+
+        android:layout_marginHorizontal="20dp"
+
+        android:layout_marginTop="-15dp"
+
         app:cardCornerRadius="12dp"
+
         app:cardElevation="8dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+
         app:layout_constraintTop_toBottomOf="@+id/cameraContainer">
 
+
+
         <LinearLayout
+
             android:layout_width="match_parent"
+
             android:layout_height="wrap_content"
+
             android:padding="8dp">
 
             <ImageButton
+
                 android:id="@+id/btnStopCamera"
+
                 android:layout_width="0dp"
+
                 android:layout_height="48dp"
+
                 android:layout_weight="1"
+
                 android:background="?attr/selectableItemBackgroundBorderless"
+
                 android:src="@drawable/ic_camera_off"
+
                 app:tint="#EF4444" />
 
             <ImageButton
+
                 android:id="@+id/btnFlash"
+
                 android:layout_width="0dp"
+
                 android:layout_height="48dp"
+
                 android:layout_weight="1"
+
                 android:background="?attr/selectableItemBackgroundBorderless"
+
                 android:src="@drawable/ic_flash_on"
+
                 app:tint="#F59E0B" />
 
             <ImageButton
+
                 android:id="@+id/btnManualAdd"
+
                 android:layout_width="0dp"
+
                 android:layout_height="48dp"
+
                 android:layout_weight="1"
+
                 android:background="?attr/selectableItemBackgroundBorderless"
+
                 android:src="@drawable/ic_edit"
+
                 app:tint="#3B82F6" />
+
         </LinearLayout>
+
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- 4. History Label -->
+
+
+    <!-- History Labels -->
+
     <TextView
+
         android:id="@+id/tvHistoryLabel"
+
         android:layout_width="wrap_content"
+
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
+
+        android:layout_marginStart="20dp"
+
+        android:layout_marginTop="20dp"
+
         android:text="Scan History"
+
         android:textStyle="bold"
+
+        android:textSize="16sp"
+
         app:layout_constraintStart_toStartOf="parent"
+
         app:layout_constraintTop_toBottomOf="@+id/controlsCard" />
 
+
+
     <TextView
+
         android:id="@+id/tvScanCount"
+
         android:layout_width="wrap_content"
+
         android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
-        android:text="0 Distinct  |  0 Total Scans"
+
+        android:layout_marginEnd="20dp"
+
         app:layout_constraintBaseline_toBaselineOf="@+id/tvHistoryLabel"
-        app:layout_constraintEnd_toEndOf="parent"
-        tools:text="10 Distinct  |  100 Total Scans" />
 
-    <!-- 5. Scan Results RecyclerView -->
+        app:layout_constraintEnd_toEndOf="parent"
+
+        tools:text="0 Distinct | 0 Total" />
+
+
+
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvScanResults"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginTop="8dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tvHistoryLabel"
-        tools:listitem="@layout/item_scan_result" />
 
-    <!-- 6. Empty Results View -->
+        android:id="@+id/rvScanResults"
+
+        android:layout_width="match_parent"
+
+        android:layout_height="0dp"
+
+        android:layout_marginTop="10dp"
+
+        app:layout_constraintBottom_toBottomOf="parent"
+
+        app:layout_constraintTop_toBottomOf="@+id/tvHistoryLabel" />
+
+
+
     <LinearLayout
+
         android:id="@+id/emptyResults"
+
         android:layout_width="wrap_content"
+
         android:layout_height="wrap_content"
+
         android:gravity="center"
+
         android:orientation="vertical"
-        android.visibility="gone"
-        app:layout_constraintBottom_toBottomOf="@+id/rvScanResults"
-        app:layout_constraintEnd_toEndOf="@+id/rvScanResults"
-        app:layout_constraintStart_toStartOf="@+id/rvScanResults"
-        app:layout_constraintTop_toTopOf="@+id/rvScanResults">
+
+        android:visibility="gone"
+
+        app:layout_constraintBottom_toBottomOf="parent"
+
+        app:layout_constraintEnd_toEndOf="parent"
+
+        app:layout_constraintStart_toStartOf="parent"
+
+        app:layout_constraintTop_toBottomOf="@+id/tvHistoryLabel">
 
         <ImageView
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:alpha="0.2"
-            android:src="@drawable/ic_qr_scan"
-            app:tint="#9CA3AF" />
+
+            android:layout_width="60dp"
+
+            android:layout_height="60dp"
+
+            android:alpha="0.3"
+
+            android:src="@drawable/ic_qr_scan" />
 
         <TextView
+
             android:layout_width="wrap_content"
+
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="No recent scans"
-            android:textColor="#9CA3AF" />
+
+            android:text="No scans yet" />
+
     </LinearLayout>
+
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

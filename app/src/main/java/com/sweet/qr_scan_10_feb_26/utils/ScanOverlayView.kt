@@ -7,12 +7,12 @@ import android.view.View
 
 class ScannerOverlayView(context: Context, attrs: AttributeSet?) : View(context, attrs) {
 
-    private val transparentPaint = Paint().apply {
+    private val clearPaint = Paint().apply {
         xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
     }
 
-    private val semiTransparentPaint = Paint().apply {
-        color = Color.parseColor("#99000000") // ဘေးပတ်ပတ်လည် မှိန်မယ့်အရောင်
+    private val dimPaint = Paint().apply {
+        color = Color.parseColor("#99000000")
     }
 
     private val framePaint = Paint().apply {
@@ -21,37 +21,54 @@ class ScannerOverlayView(context: Context, attrs: AttributeSet?) : View(context,
         strokeWidth = 6f
     }
 
+    private val crossPaint = Paint().apply {
+        color = Color.parseColor("#2196F3")
+        strokeWidth = 5f
+        strokeCap = Paint.Cap.ROUND
+    }
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        // 1. တစ်ပြင်လုံးကို မှိန်ချမယ်
-        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), semiTransparentPaint)
+        // Background dim
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), dimPaint)
 
-        // 2. အလယ်ကွက်ကို တွက်ချက်မယ် (220dp ပတ်လည်)
-        val size = (150 * resources.displayMetrics.density).toInt()
-        val left = (width - size) / 2f
-        val top = (height - size) / 2f
-        val right = left + size
-        val bottom = top + size
+        // Scan box
+        val boxWidth = width * 0.65f
+        val boxHeight = height * 0.45f
+
+        val left = (width - boxWidth) / 2
+        val top = (height - boxHeight) / 2
+        val right = left + boxWidth
+        val bottom = top + boxHeight
+
         val rect = RectF(left, top, right, bottom)
 
-        // 3. အလယ်ကွက်ကို ဖောက်ထုတ်မယ် (လင်းသွားစေဖို့)
-        canvas.drawRect(rect, transparentPaint)
+        // Clear center
+        canvas.drawRect(rect, clearPaint)
 
-        // 4. ထောင့်လေးတွေကို ဆွဲမယ် (user ရဲ့ frame ပုံစံအတိုင်း)
-        val lineLength = 40f
-        // Top-Left
-        canvas.drawLine(left, top, left + lineLength, top, framePaint)
-        canvas.drawLine(left, top, left, top + lineLength, framePaint)
-        // Top-Right
-        canvas.drawLine(right, top, right - lineLength, top, framePaint)
-        canvas.drawLine(right, top, right, top + lineLength, framePaint)
-        // Bottom-Left
-        canvas.drawLine(left, bottom, left + lineLength, bottom, framePaint)
-        canvas.drawLine(left, bottom, left, bottom - lineLength, framePaint)
-        // Bottom-Right
-        canvas.drawLine(right, bottom, right - lineLength, bottom, framePaint)
-        canvas.drawLine(right, bottom, right, bottom - lineLength, framePaint)
+        val line = 40f
+
+        // Corners
+        canvas.drawLine(left, top, left + line, top, framePaint)
+        canvas.drawLine(left, top, left, top + line, framePaint)
+
+        canvas.drawLine(right, top, right - line, top, framePaint)
+        canvas.drawLine(right, top, right, top + line, framePaint)
+
+        canvas.drawLine(left, bottom, left + line, bottom, framePaint)
+        canvas.drawLine(left, bottom, left, bottom - line, framePaint)
+
+        canvas.drawLine(right, bottom, right - line, bottom, framePaint)
+        canvas.drawLine(right, bottom, right, bottom - line, framePaint)
+
+        // Center crosshair
+        val cx = width / 2f
+        val cy = height / 2f
+        val size = 30f
+
+        canvas.drawLine(cx - size, cy, cx + size, cy, crossPaint)
+        canvas.drawLine(cx, cy - size, cx, cy + size, crossPaint)
     }
 
     init {

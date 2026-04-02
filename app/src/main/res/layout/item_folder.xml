@@ -27,11 +27,11 @@
             android:orientation="horizontal">
 
             <!-- Folder Icon (Size လျှော့ထားသည်) -->
-            <ImageView
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:src="@drawable/ic_folder"
-                app:tint="@color/primary" />
+<!--            <ImageView-->
+<!--                android:layout_width="36dp"-->
+<!--                android:layout_height="36dp"-->
+<!--                android:src="@drawable/ic_folder"-->
+<!--                app:tint="@color/primary" />-->
 
             <!-- Folder Info -->
             <LinearLayout

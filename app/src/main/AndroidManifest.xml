@@ -10,14 +10,12 @@
         android:required="false" />
 
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.VIBRATE" />
-    <!-- Android 12 အထိအတွက် -->
+    <uses-permission android:name="android.permission.VIBRATE" /> <!-- Android 12 အထိအတွက် -->
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32" />
-
-    <!-- Android 13 နှင့် အထက်အတွက် -->
+        android:maxSdkVersion="32" /> <!-- Android 13 နှင့် အထက်အတွက် -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_scanner_logo_round"
@@ -26,18 +24,28 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.QR_Scan_10_Feb_26"
         tools:targetApi="31">
+        <activity
+            android:name=".ui.main.SettingsFragment"
+            android:exported="false"
+            android:screenOrientation="portrait"/>
+        <activity
+            android:name=".ui.main.RecentlyDeletedActivity"
+            android:exported="false" />
 
+        <activity
+            android:name=".ui.main.FolderDetailActivity"
+            android:exported="false" />
         <activity
             android:name=".ui.scanner.ScannerActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
-
         <activity
             android:name=".ui.main.MainActivity"
             android:exported="true"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

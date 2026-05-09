@@ -1,34 +1,21 @@
 package com.sweet.qr_scan_10_feb_26.data.database
-
 import android.content.Context
-import androidx.room.Database
-import androidx.room.Room
-import androidx.room.RoomDatabase
-import com.sweet.qr_scan_10_feb_26.data.dao.ScanFolderDao
-import com.sweet.qr_scan_10_feb_26.data.dao.ScanItemDao
-import com.sweet.qr_scan_10_feb_26.data.entity.ScanFolder
-import com.sweet.qr_scan_10_feb_26.data.entity.ScanItem
+import androidx.room.*
+import com.sweet.qr_scan_10_feb_26.data.dao.*
+import com.sweet.qr_scan_10_feb_26.data.entity.*
 
-@Database(
-    entities = [ScanFolder::class, ScanItem::class],
-    version = 1,
-    exportSchema = false
-)
+@Database(entities = [ScanFolder::class, ScanFile::class, ScanItem::class], version = 7, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun scanFolderDao(): ScanFolderDao
+    abstract fun scanFileDao(): ScanFileDao
     abstract fun scanItemDao(): ScanItemDao
 
     companion object {
-        @Volatile
-        private var INSTANCE: AppDatabase? = null
-
+        @Volatile private var INSTANCE: AppDatabase? = null
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "advanced_qr_scanner.db"
-                ).build()
+                val instance = Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, "scanner_pro_db")
+                    .fallbackToDestructiveMigration().build()
                 INSTANCE = instance
                 instance
             }

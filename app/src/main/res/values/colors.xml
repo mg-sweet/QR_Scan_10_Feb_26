@@ -1,16 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary">#3B82F6</color>
-    <color name="primary_variant">#2563EB</color>
+    <!-- မူလအရောင်များ -->
+    <color name="primary">#4F46E5</color> <!-- Indigo ကိုပြောင်းသုံးထားပါသည် (App တွင် နေရာများစွာသုံးထား၍ပါ) -->
+    <color name="primary_variant">#4338CA</color>
     <color name="secondary">#10B981</color>
     <color name="secondary_variant">#059669</color>
-    <color name="background">#F5F7FA</color>
-    <color name="surface">#FFFFFF</color>
+    <color name="background">#FFFFF1</color> <!-- App နောက်ခံအရောင် -->
+    <color name="surface">#FFFFFF</color> <!-- Card များ၏အရောင် -->
     <color name="error">#EF4444</color>
     <color name="on_primary">#FFFFFF</color>
     <color name="on_secondary">#FFFFFF</color>
-    <color name="on_background">#1F2937</color>
-    <color name="on_surface">#1F2937</color>
+
+    <!-- ✅ Text အရောင်များ -->
+    <color name="on_background">#1E293B</color> <!-- ခေါင်းစဉ် စာသားများ (အမည်း) -->
+    <color name="on_surface">#1E293B</color> <!-- Card ပေါ်မှ စာသားများ (အမည်း) -->
+    <color name="text_secondary">#64748B</color> <!-- Subtitle စာသားများ (ခဲရောင်) -->
+
     <color name="on_error">#FFFFFF</color>
     <color name="purple_500">#673AB7</color>
 </resources>

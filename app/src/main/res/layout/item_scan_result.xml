@@ -9,134 +9,127 @@
     app:cardBackgroundColor="@android:color/transparent"
     app:cardCornerRadius="16dp"
     app:cardElevation="0dp"
-    android:background="@drawable/glassmorphism_background"
-    >
+    android:background="@drawable/glassmorphism_background">
 
-<androidx.constraintlayout.widget.ConstraintLayout
-android:layout_width="match_parent"
-android:layout_height="wrap_content"
-android:padding="10dp">
-
-<!-- QR Icon (Size လျှော့ထားသည်) -->
-<ImageView
-    android:id="@+id/ivIcon"
-    android:layout_width="32dp"
-    android:layout_height="32dp"
-    android:background="@drawable/bg_icon_glass"
-    android:padding="6dp"
-    android:src="@drawable/ic_qr_code"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toTopOf="parent"
-    app:tint="#4F46E5" />
-
-<!-- Text Content (Vertical spacing လျှော့ထားသည်) -->
-<LinearLayout
-    android:id="@+id/textContainer"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"
-    android:layout_marginStart="10dp"
-    android:layout_marginEnd="8dp"
-    android:orientation="vertical"
-    app:layout_constraintBottom_toBottomOf="@+id/ivIcon"
-    app:layout_constraintEnd_toStartOf="@+id/tvQuantity"
-    app:layout_constraintStart_toEndOf="@+id/ivIcon"
-    app:layout_constraintTop_toTopOf="@+id/ivIcon">
-
-    <TextView
-        android:id="@+id/tvScanValue"
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:textColor="#1F2937"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        tools:text="https://example.com" />
+        android:padding="10dp">
 
-    <TextView
-        android:id="@+id/tvFormat"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="#6B7280"
-        android:textSize="10sp"
-        tools:text="QR Code" />
-</LinearLayout>
-
-<!-- Quantity (Compact Pill) -->
-<TextView
-    android:id="@+id/tvQuantity"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:background="@drawable/bg_quantity_pill_small"
-    android:gravity="center"
-    android:minWidth="28dp"
-    android:paddingHorizontal="8dp"
-    android:paddingVertical="2dp"
-    android:textColor="#FFFFFF"
-    android:textSize="12sp"
-    android:textStyle="bold"
-    app:layout_constraintBottom_toBottomOf="@+id/ivIcon"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintTop_toTopOf="@+id/ivIcon"
-    tools:text="5" />
-
-<!-- Footer Section (Date & Actions တန်းစီထားသည်) -->
-<androidx.constraintlayout.widget.ConstraintLayout
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="0dp"
-    app:layout_constraintTop_toBottomOf="@+id/ivIcon">
-
-    <TextView
-        android:id="@+id/tvLastScanned_"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:textColor="#94A3B8"
-        android:textSize="10sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:text="2 min ago" />
-
-    <LinearLayout
-        android:id="@+id/buttonGroup"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <ImageButton
-            android:id="@+id/btnPlus"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:background="@drawable/bg_btn_ios_soft"
+        <ImageView
+            android:id="@+id/ivIcon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/bg_icon_glass"
             android:padding="6dp"
-            android:src="@drawable/ic_add"
-            app:tint="#10B981" />
+            android:src="@drawable/ic_qr_code"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@color/primary" />
 
-        <ImageButton
-            android:id="@+id/btnMinus"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
+        <LinearLayout
+            android:id="@+id/textContainer"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
             android:layout_marginStart="10dp"
-            android:background="@drawable/bg_btn_ios_soft"
-            android:padding="6dp"
-            android:src="@drawable/ic_remove"
-            app:tint="#F59E0B" />
+            android:layout_marginEnd="8dp"
+            android:orientation="vertical"
+            app:layout_constraintBottom_toBottomOf="@+id/ivIcon"
+            app:layout_constraintEnd_toStartOf="@+id/tvQuantity"
+            app:layout_constraintStart_toEndOf="@+id/ivIcon"
+            app:layout_constraintTop_toTopOf="@+id/ivIcon">
 
-        <ImageButton
-            android:id="@+id/btnDelete"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:layout_marginStart="16dp"
-            android:background="@android:color/transparent"
-            android:padding="6dp"
-            android:src="@drawable/ic_delete"
-            app:tint="#EF4444" />
-    </LinearLayout>
-</androidx.constraintlayout.widget.ConstraintLayout>
+            <TextView
+                android:id="@+id/tvScanValue"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                tools:text="https://example.com" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
-    </com.google.android.material.card.MaterialCardView>
+            <TextView
+                android:id="@+id/tvFormat"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text_secondary"
+                android:textSize="10sp"
+                tools:text="QR Code" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvQuantity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_quantity_pill_small"
+            android:gravity="center"
+            android:minWidth="28dp"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="2dp"
+            android:textColor="@color/on_primary"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@+id/ivIcon"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/ivIcon"
+            tools:text="5" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="0dp"
+            app:layout_constraintTop_toBottomOf="@+id/ivIcon">
+
+            <TextView
+                android:id="@+id/tvLastScanned_"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text_secondary"
+                android:textSize="10sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:text="2 min ago" />
+
+            <LinearLayout
+                android:id="@+id/buttonGroup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+
+                <ImageButton
+                    android:id="@+id/btnPlus"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:background="@drawable/bg_btn_ios_soft"
+                    android:padding="6dp"
+                    android:src="@drawable/ic_add"
+                    app:tint="@color/secondary" />
+
+                <ImageButton
+                    android:id="@+id/btnMinus"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_marginStart="10dp"
+                    android:background="@drawable/bg_btn_ios_soft"
+                    android:padding="6dp"
+                    android:src="@drawable/ic_remove"
+                    app:tint="@color/purple_500" /> <ImageButton
+                android:id="@+id/btnDelete"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginStart="16dp"
+                android:background="@android:color/transparent"
+                android:padding="6dp"
+                android:src="@drawable/ic_delete"
+                app:tint="@color/error" />
+            </LinearLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.material.card.MaterialCardView>

@@ -10,39 +10,14 @@ import com.sweet.qr_scan_10_feb_26.data.repository.ScanRepository
 import kotlinx.coroutines.launch
 
 class ScannerViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val repository: ScanRepository
-
+    private val repo: ScanRepository
     init {
-        val database = AppDatabase.getDatabase(application)
-        repository = ScanRepository(database.scanFolderDao(), database.scanItemDao())
+        val db = AppDatabase.getDatabase(application)
+        repo = ScanRepository(db.scanFolderDao(), db.scanFileDao(), db.scanItemDao())
     }
-
-    fun getScanItems(folderId: Long): LiveData<List<ScanItem>> {
-        return repository.getItemsByFolder(folderId)
-    }
-
-    fun addScanItem(folderId: Long, scanValue: String, format: String) {
-        viewModelScope.launch {
-            repository.addOrUpdateScanItem(folderId, scanValue, format)
-        }
-    }
-
-    fun incrementQuantity(itemId: Long) {
-        viewModelScope.launch {
-            repository.incrementItemQuantity(itemId)
-        }
-    }
-
-    fun decrementQuantity(item: ScanItem) {
-        viewModelScope.launch {
-            repository.decrementItemQuantity(item)
-        }
-    }
-
-    fun deleteItem(item: ScanItem) {
-        viewModelScope.launch {
-            repository.deleteItem(item)
-        }
-    }
+    fun getItems(fileId: Long) = repo.getItems(fileId)
+    fun addScanItem(fileId: Long, v: String, f: String) = viewModelScope.launch { repo.addOrUpdateScanItem(fileId, v, f) }
+    fun incrementItemQuantity(id: Long) = viewModelScope.launch { repo.incrementItemQuantity(id) }
+    fun decrementItemQuantity(item: ScanItem) = viewModelScope.launch { repo.decrementItemQuantity(item) }
+    fun deleteItem(item: ScanItem) = viewModelScope.launch { repo.deleteItem(item) }
 }

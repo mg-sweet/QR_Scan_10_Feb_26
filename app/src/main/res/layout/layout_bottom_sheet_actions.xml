@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@drawable/bg_bottom_sheet"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <!-- Drag Handle Indicator -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="16dp"
+        android:background="#CBD5E1" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:text="Create New"
+        android:textColor="#1E293B"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <!-- 1. Camera Scan -->
+    <LinearLayout
+        android:id="@+id/btnActionCamera"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:gravity="center_vertical"
+        android:paddingVertical="14dp">
+        <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@android:drawable/ic_menu_camera"
+            app:tint="#4F46E5"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="16dp" android:text="Scan with Camera" android:textColor="#334155" android:textSize="16sp" />
+    </LinearLayout>
+
+    <!-- 2. Import Gallery -->
+    <LinearLayout
+        android:id="@+id/btnActionGallery"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:gravity="center_vertical"
+        android:paddingVertical="14dp">
+        <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@android:drawable/ic_menu_gallery" app:tint="#10B981"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="16dp" android:text="Import from Gallery" android:textColor="#334155" android:textSize="16sp" />
+    </LinearLayout>
+
+    <!-- 3. Create Folder -->
+    <LinearLayout
+        android:id="@+id/btnActionFolder"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:gravity="center_vertical"
+        android:paddingVertical="14dp">
+        <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_add_folder" app:tint="#F59E0B"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="16dp" android:text="Create New Project Folder" android:textColor="#334155" android:textSize="16sp" />
+    </LinearLayout>
+
+</LinearLayout>

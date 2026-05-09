@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"> <!-- changed -->
+
+    <!-- ✅ Boxed Toolbar ID: toolbarCard -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/toolbarCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardElevation="4dp"
+        app:cardCornerRadius="0dp"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:id="@+id/toolbarContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            >
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="64dp"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="20dp"
+                android:text="Settings"
+                android:textColor="@color/on_surface"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- ✅ Scrollable Content -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingBottom="40dp"
+        android:background="@color/background"
+        app:layout_constraintTop_toBottomOf="@id/toolbarCard"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <!-- ================= GROUP 1: SCANNER ================= -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Scanner &amp; Behaviors"
+                android:textColor="#4F46E5"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="1dp"
+                app:strokeWidth="1dp"
+
+                android:layout_marginBottom="24dp">
+                <!--app:strokeColor="#E2E8F0" delete stroke color-->
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Beep Sound -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp"
+                        android:gravity="center_vertical">
+                        <TextView android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Beep Sound on Scan"
+                            android:textColor="@color/on_surface"
+                            android:textSize="16sp"/>
+                        <com.google.android.material.materialswitch.MaterialSwitch android:id="@+id/switchBeep" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    </LinearLayout>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E2E8F0" android:layout_marginHorizontal="16dp"/>
+
+                    <!-- Vibrate -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp"
+                        android:gravity="center_vertical">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Vibrate on Scan"
+                            android:textColor="@color/on_surface" android:textSize="16sp"/>
+                        <com.google.android.material.materialswitch.MaterialSwitch android:id="@+id/switchVibrate" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    </LinearLayout>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E2E8F0" android:layout_marginHorizontal="16dp"/>
+
+                    <!-- Duplicate Warning -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp"
+                        android:gravity="center_vertical">
+                        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Warn on Duplicate Scan" android:textColor="@color/on_surface" android:textSize="16sp"/>
+                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Alert when scanning the same item quickly" android:textColor="#94A3B8" android:textSize="12sp"/>
+                        </LinearLayout>
+                        <com.google.android.material.materialswitch.MaterialSwitch android:id="@+id/switchDuplicateWarn" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ================= GROUP 2: EXPORT & DATA ================= -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Export &amp; Data"
+                android:textColor="#4F46E5"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="1dp"
+                app:strokeWidth="1dp"
+
+                android:layout_marginBottom="24dp">
+                <!--app:strokeColor="#E2E8F0"-->
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Export Method -->
+                    <LinearLayout
+                        android:id="@+id/btnExportMethod"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:orientation="vertical">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Default Export Method" android:textColor="@color/on_surface" android:textSize="16sp"/>
+                        <TextView android:id="@+id/tvExportValue" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Merge Multi-Files into One CSV" android:textColor="#4F46E5" android:textSize="14sp" android:layout_marginTop="2dp"/>
+                    </LinearLayout>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E2E8F0" android:layout_marginHorizontal="16dp"/>
+
+                    <!-- Auto Empty Trash -->
+                    <LinearLayout
+                        android:id="@+id/btnAutoEmptyTrash"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:orientation="vertical">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Auto-Empty Trash" android:textColor="@color/on_surface" android:textSize="16sp"/>
+                        <TextView android:id="@+id/tvTrashValue" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="After 30 Days" android:textColor="#4F46E5" android:textSize="14sp" android:layout_marginTop="2dp"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ================= GROUP 3: APPEARANCE ================= -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Appearance"
+                android:textColor="#4F46E5"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="1dp"
+                app:strokeWidth="1dp"
+
+                android:layout_marginBottom="24dp">
+                <!--app:strokeColor="#E2E8F0"-->
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Theme -->
+                    <LinearLayout
+                        android:id="@+id/btnTheme"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:orientation="vertical">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="App Theme" android:textColor="@color/on_surface" android:textSize="16sp"/>
+                        <TextView android:id="@+id/tvThemeValue" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="System Default" android:textColor="#4F46E5" android:textSize="14sp" android:layout_marginTop="2dp"/>
+                    </LinearLayout>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E2E8F0" android:layout_marginHorizontal="16dp"/>
+
+                    <!-- Time Format -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp"
+                        android:gravity="center_vertical">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Use 24-Hour Format" android:textColor="@color/on_surface" android:textSize="16sp"/>
+                        <com.google.android.material.materialswitch.MaterialSwitch android:id="@+id/switchTimeFormat" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ================= GROUP 4: ABOUT ================= -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="About"
+                android:textColor="#4F46E5"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp"/>
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="1dp"
+                app:strokeWidth="1dp"
+                >
+                <!-- app:strokeColor="#E2E8F0" -->
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/btnRateUs"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:text="Rate the App"
+                        android:textColor="@color/on_surface"
+                        android:textSize="16sp"/>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E2E8F0" android:layout_marginHorizontal="16dp"/>
+
+                    <TextView
+                        android:id="@+id/btnPrivacyPolicy"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:text="Privacy Policy"
+                        android:textColor="@color/on_surface"
+                        android:textSize="16sp"/>
+
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#E2E8F0" android:layout_marginHorizontal="16dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="App Version" android:textColor="@color/on_surface" android:textSize="16sp"/>
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="v1.0.0" android:textColor="#94A3B8" android:textSize="16sp"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

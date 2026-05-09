@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="12dp"
+    android:layout_marginVertical="5dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="1dp"
+    > <!-- (မှတ်ချက်: Adapter တွင် Selection ဖြစ်လျှင် Stroke Width အလိုလို 3 သို့ ပြောင်းပါမည်) -->
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:background="?attr/selectableItemBackground"> <!-- ✅ Click Ripple Effect -->
+
+        <!-- Type Icon (Folder or File) -->
+        <ImageView
+            android:id="@+id/ivTypeIcon"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+
+            android:padding="10dp"
+            android:src="@drawable/ic_folder"
+            app:tint="@color/primary" /> <!-- ✅ Changed -->
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvItemName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/on_surface"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                tools:text="Warehouse Session A" /> <!-- ✅ Changed -->
+
+            <TextView
+                android:id="@+id/tvDeletedDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                tools:text="Deleted on 29 Mar, 10:30 PM" /> <!-- ✅ Changed -->
+        </LinearLayout>
+
+        <!-- ✅ Actions Container -->
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <!-- Normal Mode: Restore & Delete Buttons -->
+            <LinearLayout
+                android:id="@+id/actionButtonsContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <ImageButton
+                    android:id="@+id/btnRestore"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_restore"
+                    app:tint="@color/secondary"/> <!-- ✅ Changed -->
+
+                <ImageButton
+                    android:id="@+id/btnDeletePermanent"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginStart="8dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_delete_forever"
+                    app:tint="@color/error"/> <!-- ✅ Changed -->
+            </LinearLayout>
+
+            <!-- Selection Mode: CheckBox -->
+            <CheckBox
+                android:id="@+id/checkbox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:visibility="gone" />
+        </FrameLayout>
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

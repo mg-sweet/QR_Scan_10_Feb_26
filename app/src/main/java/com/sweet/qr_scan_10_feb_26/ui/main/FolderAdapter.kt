@@ -1,70 +1,125 @@
 package com.sweet.qr_scan_10_feb_26.ui.main
 
-import android.view.LayoutInflater
-import android.view.ViewGroup
-import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.ListAdapter
-import androidx.recyclerview.widget.RecyclerView
+import android.annotation.SuppressLint
+import android.view.*
+import androidx.recyclerview.widget.*
 import com.sweet.qr_scan_10_feb_26.data.entity.FolderWithStats
 import com.sweet.qr_scan_10_feb_26.databinding.ItemFolderBinding
+import com.sweet.qr_scan_10_feb_26.utils.PreferencesManager
 import java.text.SimpleDateFormat
 import java.util.*
 
 class FolderAdapter(
     private val onFolderClick: (FolderWithStats) -> Unit,
-    private val onDeleteClick: (FolderWithStats) -> Unit
-) : ListAdapter<FolderWithStats, FolderAdapter.FolderViewHolder>(FolderDiffCallback()) {
+    private val onLongClick: (FolderWithStats) -> Unit, // ✅ Long Press Callback
+    private val onMenuClick: (FolderWithStats, View) -> Unit,
+    private val onSelectionChanged: (Int) -> Unit
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FolderViewHolder {
-        val binding = ItemFolderBinding.inflate(
-            LayoutInflater.from(parent.context),
-            parent,
-            false
-        )
-        return FolderViewHolder(binding)
-    }
+) : ListAdapter<FolderWithStats, FolderAdapter.FolderViewHolder>(DiffCallback()) {
 
-    override fun onBindViewHolder(holder: FolderViewHolder, position: Int) {
-        holder.bind(getItem(position))
-    }
+    var isSelectionMode = false
+    val selectedIds = mutableSetOf<Long>()
 
-    inner class FolderViewHolder(
-        private val binding: ItemFolderBinding
-    ) : RecyclerView.ViewHolder(binding.root) {
-
+    //private val dateFormatter = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
+    inner class FolderViewHolder(val binding: ItemFolderBinding) : RecyclerView.ViewHolder(binding.root) {
+        @SuppressLint("SetTextI18n")
         fun bind(item: FolderWithStats) {
             binding.apply {
                 tvFolderName.text = item.name
-                tvCreatedDate.text = "Created: ${formatDate(item.createdDate)}"
+                tvTotalCount.text = "${item.totalCount} Files"
 
-                // Database မှ တစ်ခါတည်းပါလာသော stats များကို တန်းထည့်သည်
-                // Coroutine မလိုတော့သောကြောင့် Performance အလွန်ကောင်းသွားသည်
-                tvDistinctCount.text = "${item.distinctCount} Distinct"
-                tvTotalCount.text = "${item.totalCount} Scans"
+                // Selection Mode UI logic
+                cbSelect.visibility = if (isSelectionMode) View.VISIBLE else View.GONE
+                btnMenu.visibility = if (isSelectionMode) View.GONE else View.VISIBLE
 
-                cardFolder.setOnClickListener {
-                    onFolderClick(item)
+                cbSelect.setOnCheckedChangeListener(null)
+                cbSelect.isChecked = selectedIds.contains(item.id)
+
+                // ==========================================
+                // ✅ Time Format Logic အတိအကျ
+                // ==========================================
+                val is24Hour = PreferencesManager(binding.root.context).use24HourFormat
+
+                // Locale.US ကို အသုံးပြုခြင်းဖြင့် ဖုန်း၏ Default Language မည်သို့ပင်ဖြစ်စေ Format မှန်ကန်စွာ ထွက်မည်
+                val pattern = if (is24Hour) "MMM dd, yyyy HH:mm" else "MMM dd, yyyy hh:mm a"
+                val sdf = SimpleDateFormat(pattern, Locale.getDefault())
+
+                val createdStr = "Created: ${sdf.format(Date(item.createdDate))}"
+
+                if (item.restoredDate != null) {
+                    // ✅ Restore လုပ်ထားလျှင် နှစ်ခုလုံးပြမည်
+                    val restoredStr = "↺ ${sdf.format(Date(item.restoredDate))}"
+                    tvCreatedDate.text = "$restoredStr\n$createdStr"
+                } else {
+                    // ပုံမှန်ဆိုလျှင် Created တစ်ခုတည်းသာပြမည်
+                    tvCreatedDate.text = createdStr
                 }
 
-                btnDelete.setOnClickListener {
-                    onDeleteClick(item)
+                // ==========================================
+                // Click Listeners
+                // ==========================================
+                root.setOnClickListener {
+                    if (isSelectionMode) {
+                        toggleSelection(item.id)
+                    } else {
+                        onFolderClick(item)
+                    }
                 }
+
+                root.setOnLongClickListener {
+                    if (!isSelectionMode) {
+                        onLongClick(item)
+                        true
+                    } else {
+                        false
+                    }
+                }
+
+                cbSelect.setOnClickListener { toggleSelection(item.id) }
+                btnMenu.setOnClickListener { onMenuClick(item, it) }
             }
         }
 
-        private fun formatDate(timestamp: Long): String {
-            val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-            return sdf.format(Date(timestamp))
+        private fun toggleSelection(id: Long) {
+            if (selectedIds.contains(id)) selectedIds.remove(id) else selectedIds.add(id)
+            notifyItemChanged(adapterPosition)
+            onSelectionChanged(selectedIds.size)
         }
     }
 
-    class FolderDiffCallback : DiffUtil.ItemCallback<FolderWithStats>() {
-        override fun areItemsTheSame(oldItem: FolderWithStats, newItem: FolderWithStats): Boolean {
-            return oldItem.id == newItem.id
-        }
+    fun toggleSelectionMode(enabled: Boolean) {
+        isSelectionMode = enabled
+        if (!enabled) selectedIds.clear()
+        notifyDataSetChanged()
+    }
 
-        override fun areContentsTheSame(oldItem: FolderWithStats, newItem: FolderWithStats): Boolean {
-            return oldItem == newItem
+    // fun selectAll(allFolders: List<FolderWithStats>) {
+    fun selectAll() {
+        selectedIds.clear()
+        selectedIds.addAll(currentList.map { it.id })
+        notifyDataSetChanged()
+        onSelectionChanged(selectedIds.size)
+    }
+
+    fun toggleSelectAll() {
+        // အကယ်၍ ရွေးထားတဲ့အရေအတွက်နဲ့ ရှိသမျှစာရင်း အရေအတွက် တူနေရင် (အကုန်လုံး Select ဖြစ်နေရင်)
+        if (selectedIds.size == currentList.size) {
+            selectedIds.clear() // အကုန်လုံးကို ပြန်ဖြုတ်လိုက်မယ်
+        } else {
+            // အကုန်လုံး မရွေးရသေးရင် အကုန်လုံးကို ရွေးလိုက်မယ်
+            selectedIds.clear()
+            selectedIds.addAll(currentList.map { it.id })
         }
+        notifyDataSetChanged()
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
+        FolderViewHolder(ItemFolderBinding.inflate(LayoutInflater.from(parent.context), parent, false))
+
+    override fun onBindViewHolder(holder: FolderViewHolder, position: Int) = holder.bind(getItem(position))
+
+    class DiffCallback : DiffUtil.ItemCallback<FolderWithStats>() {
+        override fun areItemsTheSame(o: FolderWithStats, n: FolderWithStats) = o.id == n.id
+        override fun areContentsTheSame(o: FolderWithStats, n: FolderWithStats) = o == n
     }
 }

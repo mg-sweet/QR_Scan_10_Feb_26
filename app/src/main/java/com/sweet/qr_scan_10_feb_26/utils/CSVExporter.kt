@@ -2,8 +2,8 @@ package com.sweet.qr_scan_10_feb_26.utils
 
 import android.content.Context
 import com.sweet.qr_scan_10_feb_26.data.database.AppDatabase
-import com.sweet.qr_scan_10_feb_26.data.entity.ScanFolder
-import com.sweet.qr_scan_10_feb_26.data.entity.ScanItem
+import com.sweet.qr_scan_10_feb_26.data.entity.*
+import com.sweet.qr_scan_10_feb_26.data.repository.ScanRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -11,90 +11,115 @@ import java.io.FileWriter
 import java.text.SimpleDateFormat
 import java.util.*
 
+data class ItemWithFileName(
+    val fileName: String, val scanValue: String, val barcodeFormat: String,
+    val quantity: Int, val lastScannedDate: Long
+)
+
 object CSVExporter {
 
-    /**
-     * Folder များစွာကို တစ်ပြိုင်တည်း Export ထုတ်ပေးပြီး CSV File List ကို ပြန်ပေးသည်။
-     */
+    // ====================================================
+    // 📂 SEPARATE MODE (ဖိုင်ခွဲ၍ ထုတ်ခြင်း)
+    // ====================================================
+
+    // ၁။ (Folder Detail မျက်နှာပြင်မှ) Session များကို ဖိုင်ခွဲထုတ်ရန်
+    suspend fun exportIndividualSessions(context: Context, sessions: List<FileWithStats>): List<File> {
+        return withContext(Dispatchers.IO) {
+            val db = AppDatabase.getDatabase(context)
+            val exportList = mutableListOf<File>()
+            for (session in sessions) {
+                val items = db.scanItemDao().getItemsByFileSync(session.id)
+                val sanitized = session.fileName.replace(Regex("[^a-zA-Z0-9]"), "_")
+                val file = File(context.cacheDir, "${sanitized}_Session.csv")
+                FileWriter(file).use { writer ->
+                    writer.append("Value,Format,Quantity\n")
+                    items.forEach { writer.append("\"${it.scanValue}\",${it.barcodeFormat},${it.quantity}\n") }
+                }
+                exportList.add(file)
+            }
+            exportList
+        }
+    }
+
+    // ၂။ (Home မျက်နှာပြင်မှ) Folder များကို ဖိုင်ခွဲထုတ်ရန်
     suspend fun exportFolders(context: Context, folders: List<ScanFolder>): List<File> {
         return withContext(Dispatchers.IO) {
-            val database = AppDatabase.getDatabase(context)
+            val db = AppDatabase.getDatabase(context)
+            val repo = ScanRepository(db.scanFolderDao(), db.scanFileDao(), db.scanItemDao())
             val csvFiles = mutableListOf<File>()
-
             for (folder in folders) {
-                // Database မှ Data ကို တိုက်ရိုက်ဆွဲယူသည်
-                val items = getItemsForFolder(database, folder.id)
-
-                if (items.isNotEmpty()) {
-                    // Folder Object တစ်ခုလုံးကို ပို့ပေးလိုက်သည် (lastModified သိနိုင်ရန်)
-                    val file = createCSVFile(context, folder, items)
-                    csvFiles.add(file)
+                val items = repo.getItemsWithFileNamesByFolder(folder.id)
+                val sanitized = folder.name.replace(Regex("[^a-zA-Z0-9]"), "_")
+                val file = File(context.cacheDir, "${sanitized}_Project.csv")
+                FileWriter(file).use { writer ->
+                    writer.append("Session_Name,Value,Format,Quantity,Date_Modified\n")
+                    val sdf = SimpleDateFormat("dd-MMM-yyyy HH:mm:ss", Locale.getDefault())
+                    items.forEach { item ->
+                        writer.append("\"${item.fileName}\",\"${item.scanValue}\",${item.barcodeFormat},${item.quantity},\"${sdf.format(Date(item.lastScannedDate))}\"\n")
+                    }
                 }
+                csvFiles.add(file)
             }
             csvFiles
         }
     }
 
-    private suspend fun getItemsForFolder(database: AppDatabase, folderId: Long): List<ScanItem> {
+    // ====================================================
+    // 📦 MERGE MODE (CSV တစ်ဖိုင်တည်းအဖြစ် ပေါင်းထုတ်ခြင်း)
+    // ====================================================
+
+    // ၃။ (Folder Detail မှ) Session များအားလုံးကို CSV တစ်ဖိုင်တည်း ပေါင်းထုတ်ရန်
+    suspend fun exportMergedSessionsToOneFile(context: Context, sessions: List<FileWithStats>, folderName: String = "Merged"): List<File> {
         return withContext(Dispatchers.IO) {
-            try {
-                // Suspend function သုံးပြီး Synchronous အတိုင်း Data ဆွဲယူသည်
-                database.scanItemDao().getItemsByFolderSync(folderId)
-            } catch (e: Exception) {
-                emptyList()
+            val db = AppDatabase.getDatabase(context)
+            val timestamp = SimpleDateFormat("ddMMM_HHmm", Locale.getDefault()).format(Date())
+            val file = File(context.cacheDir, "${folderName}_All_Sessions_$timestamp.csv")
+            FileWriter(file).use { writer ->
+                writer.append("Session_Name,Value,Format,Quantity\n") // စာရင်းမရောသွားအောင် Session နာမည်ပါ ထည့်ပေးထားသည်
+                sessions.forEach { session ->
+                    val items = db.scanItemDao().getItemsByFileSync(session.id)
+                    items.forEach { item ->
+                        writer.append("\"${session.fileName}\",\"${item.scanValue}\",${item.barcodeFormat},${item.quantity}\n")
+                    }
+                }
             }
+            listOf(file) // List ပုံစံဖြင့် ပြန်ပို့ပေးမည် (Flow မပျက်စေရန်)
         }
     }
 
-    private fun createCSVFile(
-        context: Context,
-        folder: ScanFolder,
-        items: List<ScanItem>
-    ): File {
-        // 1. Folder Name ကို ဖိုင်သိမ်းလို့ရအောင် သန့်စင်ခြင်း
-        val sanitizedName = folder.name.replace(Regex("[^a-zA-Z0-9]"), "_")
-
-        // 2. ရက်စွဲနှင့် အချိန် Format များ သတ်မှတ်ခြင်း
-        // Folder နောက်ဆုံး Scan ဖတ်ခဲ့သည့်ရက် (ဥပမာ - 26Feb)
-        val lastUpdateFormatter = SimpleDateFormat("ddMMM", Locale.getDefault())
-        val lastUpdateDate = lastUpdateFormatter.format(Date(folder.lastModified))
-
-        // လက်ရှိ Export ထုတ်သည့်အချိန် (နာရီ၊ မိနစ်၊ စက္ကန့်)
-        // ဤစက္ကန့်ပိုင်းသည် Android Cache Error ကို ဖြေရှင်းပေးမည့် အဓိကသော့ချက်ဖြစ်သည်
-        val exportTimeFormatter = SimpleDateFormat("hh_mm_ss a", Locale.getDefault())
-        val exportTime = exportTimeFormatter.format(Date())
-
-        // 3. ဖိုင်နာမည် တည်ဆောက်ခြင်း
-        // ဥပမာ - Warehouse_Updated_26Feb_104522.csv
-        val fileName = "${sanitizedName}_${lastUpdateDate}_$exportTime.csv"
-        val file = File(context.cacheDir, fileName)
-
-        // 4. Maintenance: Cache ထဲရှိ ဤ Folder နှင့်ဆိုင်သော CSV အဟောင်းများကို ရှင်းထုတ်ခြင်း
-        try {
-            context.cacheDir.listFiles()?.forEach {
-                if (it.name.startsWith(sanitizedName) && it.name.endsWith(".csv")) {
-                    it.delete()
+    // ၄။ (Home မှ) Project/Folder များအားလုံးကို CSV တစ်ဖိုင်တည်း ပေါင်းထုတ်ရန်
+    suspend fun exportMergedFoldersToOneFile(context: Context, folders: List<ScanFolder>): List<File> {
+        return withContext(Dispatchers.IO) {
+            val db = AppDatabase.getDatabase(context)
+            val repo = ScanRepository(db.scanFolderDao(), db.scanFileDao(), db.scanItemDao())
+            val timestamp = SimpleDateFormat("ddMMM_HHmm", Locale.getDefault()).format(Date())
+            val file = File(context.cacheDir, "All_Projects_Merged_$timestamp.csv")
+            FileWriter(file).use { writer ->
+                writer.append("Project_Name,Session_Name,Value,Format,Quantity,Date_Modified\n")
+                val sdf = SimpleDateFormat("dd-MMM-yyyy HH:mm:ss", Locale.getDefault())
+                folders.forEach { folder ->
+                    val items = repo.getItemsWithFileNamesByFolder(folder.id)
+                    items.forEach { item ->
+                        writer.append("\"${folder.name}\",\"${item.fileName}\",\"${item.scanValue}\",${item.barcodeFormat},${item.quantity},\"${sdf.format(Date(item.lastScannedDate))}\"\n")
+                    }
                 }
             }
-        } catch (e: Exception) {
-            // Cleanup error ကို လျစ်လျူရှုနိုင်သည်
+            listOf(file)
         }
+    }
 
-        // 5. CSV ဖိုင်ထဲသို့ Data ရေးသားခြင်း
-        FileWriter(file).use { writer ->
-            // Header Row
-            writer.append("Name,Qty\n")
-
-            // Data Rows
-            items.forEach { item ->
-                // Scan တန်ဖိုးထဲတွင် (") ပါခဲ့လျှင် ("") ဟု ပြောင်းလဲပေးခြင်းဖြင့် CSV format ကို ထိန်းသိမ်းသည်
-                val escapedValue = item.scanValue.replace("\"", "\"\"")
-
-                // တန်ဖိုးများကို Double quotes ကြားထဲထည့်ခြင်းဖြင့် ကော်မာ (comma) ပါခဲ့လျှင်လည်း Column မကွဲစေရန် ကာကွယ်သည်
-                writer.append("\"$escapedValue\",${item.quantity}\n")
+    // (Single Item အတွက်)
+    suspend fun exportSingleFile(context: Context, stats: FileWithStats): File {
+        return withContext(Dispatchers.IO) {
+            val db = AppDatabase.getDatabase(context)
+            val items = db.scanItemDao().getItemsByFileSync(stats.id)
+            val sanitized = stats.fileName.replace(Regex("[^a-zA-Z0-9]"), "_")
+            val file = File(context.cacheDir, "${sanitized}_Single.csv")
+            FileWriter(file).use { writer ->
+                writer.append("Value,Format,Quantity\n")
+                items.forEach { writer.append("\"${it.scanValue}\",${it.barcodeFormat},${it.quantity}\n") }
             }
+            file
         }
-
-        return file
     }
 }

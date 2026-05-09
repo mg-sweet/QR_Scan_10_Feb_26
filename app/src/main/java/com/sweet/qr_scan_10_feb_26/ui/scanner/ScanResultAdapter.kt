@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.sweet.qr_scan_10_feb_26.data.entity.ScanItem
 import com.sweet.qr_scan_10_feb_26.databinding.ItemScanResultBinding
+import com.sweet.qr_scan_10_feb_26.utils.PreferencesManager
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -46,8 +47,12 @@ class ScanResultAdapter(
                 tvFormat.text = item.barcodeFormat
                 tvQuantity.text = item.quantity.toString()
 
-                // ✅ 12 hr format အတိအကျပြခြင်း (ဥပမာ - 29Mar 10:15:30 PM)
-                val sdf = SimpleDateFormat("dd MMM hh:mm:ss a", Locale.getDefault())
+                // ✅ Setting ကို လှမ်းဖတ်မည်
+                val is24Hour = PreferencesManager(binding.root.context).use24HourFormat
+                // ဒီနေရာမှာတော့ အချိန်လေးကိုပဲ (Time Only) ပြတာ ပိုလှပါလိမ့်မယ်
+                val pattern = if (is24Hour) "dd MMM, yyyy HH:mm" else "dd MMM, yyyy hh:mm a"
+                val sdf = SimpleDateFormat(pattern, Locale.getDefault())
+
                 tvLastScanned.text = "${sdf.format(Date(item.lastScannedDate))}"
 
                 // ✅ Auto-Fade Highlight Logic

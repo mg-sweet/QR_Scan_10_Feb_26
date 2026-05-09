@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/cardFolder"
+    android:id="@+id/cardFile"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="8dp"
@@ -17,7 +16,7 @@
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:padding="12dp"
-        android:background="?attr/selectableItemBackground"> <!-- ✅ Click လုပ်လျှင် Ripple Effect ပေါ်စေရန် ထည့်ထားပါသည် -->
+        android:background="?attr/selectableItemBackground"> <!-- ✅ Click Ripple Effect ထည့်ထားသည် -->
 
         <!-- ✅ Checkbox (Selection Mode တွင်သာ ပေါ်မည်) -->
         <CheckBox
@@ -28,11 +27,11 @@
             tools:visibility="visible" />
 
         <ImageView
-            android:id="@+id/ivFolderIcon"
+            android:id="@+id/ivFileIcon"
             android:layout_width="36dp"
             android:layout_height="36dp"
-            android:src="@drawable/ic_folder"
-            app:tint="@color/primary" /> <!-- ✅ Changed to primary color -->
+            android:src="@drawable/ic_file"
+            app:tint="@color/primary" /> <!-- ✅ Changed -->
 
         <LinearLayout
             android:layout_width="0dp"
@@ -42,16 +41,16 @@
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/tvFolderName"
+                android:id="@+id/tvFileName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/on_surface"
                 android:textSize="15sp"
                 android:textStyle="bold"
-                tools:text="Project Name" /> <!-- ✅ Changed -->
+                tools:text="Monday Session" /> <!-- ✅ Changed -->
 
             <TextView
-                android:id="@+id/tvCreatedDate"
+                android:id="@+id/tvFileDate"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/text_secondary"
@@ -59,16 +58,32 @@
                 tools:text="Mar 29, 2024" /> <!-- ✅ Changed -->
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/tvTotalCount"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="12dp"
-            android:textColor="@color/secondary"
-            android:textSize="13sp"
-            android:textStyle="bold"
-            tools:text="5 Files" /> <!-- ✅ Changed -->
+            android:gravity="end"
+            android:orientation="vertical"
+            android:layout_marginEnd="8dp">
 
+            <TextView
+                android:id="@+id/tvTotalCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/secondary"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                tools:text="45 Items" /> <!-- ✅ Changed -->
+
+            <TextView
+                android:id="@+id/tvDistinctCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/primary"
+                android:textSize="11sp"
+                tools:text="15 Distinct" /> <!-- Already using @color/primary (Good!) -->
+        </LinearLayout>
+
+        <!-- Selection mode မဟုတ်မှသာ ပေါ်မည့် Delete button -->
         <ImageButton
             android:id="@+id/btnMenu"
             android:layout_width="32dp"
